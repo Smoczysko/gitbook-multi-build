@@ -5,10 +5,17 @@ const program = require('commander');
 const chalk = require('chalk');
 
 const pkg = require(path.join(__dirname, '../package.json'));
+const buildCommand = require('./commands/build');
 
 program
     .version(pkg.version)
     .description(pkg.description);
+
+program
+    .command('build')
+    .alias('b')
+    .description('Builds GitBook books with based on provided config')
+    .action((...args) => buildCommand(args[0]));
 
 program.on('command:*', () => {
     console.error(chalk.red('Invalid command: ', program.args.join(' ')) + '\n');
