@@ -19,7 +19,7 @@ const clearWorkingDirectory = directory => {
 
 const getBookFullPath = directory => `${path.join(process.cwd(), directory)}`;
 
-const getGitBookCliDirectory = () => path.join(__dirname, '../../node_modules/gitbook-cli/bin/gitbook');
+const getGitBookCliDirectory = () => path.join(__dirname, '../../../gitbook-cli/bin/gitbook');
 
 const installBookPlugins = async directory => {
   console.log(`Installing book plugins (${directory})...`);
