@@ -52,5 +52,7 @@ module.exports = (configFile) => {
   } catch (error) {
     console.error('Error occurred while processing books');
     console.error(error);
+
+    process.exit(1);
   }
 };
