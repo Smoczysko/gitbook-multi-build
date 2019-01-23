@@ -45,11 +45,16 @@ module.exports = async (configFile) => {
 
   clearWorkingDirectory(distPath);
 
-  await Promise.all(config.books.map(async book => {
-    await installBookPlugins(book.source);
-    await buildBook(book.source);
-    await copyBuildArtifact(distPath, book.source, book.dest);
-  }));
+  try {
+    await Promise.all(config.books.map(async book => {
+      await installBookPlugins(book.source);
+      await buildBook(book.source);
+      await copyBuildArtifact(distPath, book.source, book.dest);
+    }));
 
-  console.log('Done!');
+    console.log('Done!');
+  } catch (error) {
+    console.error('Error occurred while processing books');
+    console.error(error);
+  }
 };
