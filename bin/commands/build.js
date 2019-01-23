@@ -3,9 +3,7 @@
 const path = require('path');
 const fs = require('fs');
 const rimraf = require('rimraf');
-
-const util = require('util');
-const exec = util.promisify(require('child_process').exec);
+const { execSync } = require('child_process');
 
 const clearWorkingDirectory = directory => {
   console.log('Preparing working directory...');
@@ -21,38 +19,36 @@ const getBookFullPath = directory => `${path.join(process.cwd(), directory)}`;
 
 const getGitBookCliDirectory = () => path.join(__dirname, '../../../gitbook-cli/bin/gitbook');
 
-const installBookPlugins = async directory => {
+const installBookPlugins = directory => {
   console.log(`Installing book plugins (${directory})...`);
 
-  await exec(`cd ${getBookFullPath(directory)} && node ${getGitBookCliDirectory()} install`);
+  execSync(`cd ${getBookFullPath(directory)} && node ${getGitBookCliDirectory()} install`);
 };
 
-const buildBook = async directory => {
+const buildBook = directory => {
   console.log(`Building book (${directory})...`);
 
-  await exec(`cd ${getBookFullPath(directory)} && node ${getGitBookCliDirectory()} build`);
+  execSync(`cd ${getBookFullPath(directory)} && node ${getGitBookCliDirectory()} build`);
 };
 
-const copyBuildArtifact = async (distributionPath, source, destination) => {
+const copyBuildArtifact = (distributionPath, source, destination) => {
   console.log(`Copying book (${destination})...`);
 
-  await exec(`cp -r ${getBookFullPath(source)}/_book ${distributionPath}/${destination}`);
+  execSync(`cp -r ${getBookFullPath(source)}/_book ${distributionPath}/${destination}`);
 };
 
-module.exports = async (configFile) => {
+module.exports = (configFile) => {
   const config = require(path.join(process.cwd(), configFile));
   const distPath = path.join(process.cwd(), config.dist);
 
-  clearWorkingDirectory(distPath);
-
   try {
-    await Promise.all(config.books.map(async book => {
-      await installBookPlugins(book.source);
-      await buildBook(book.source);
-      await copyBuildArtifact(distPath, book.source, book.dest);
-    }));
+    clearWorkingDirectory(distPath);
 
-    console.log('Done!');
+    config.books.map(book => {
+      installBookPlugins(book.source);
+      buildBook(book.source);
+      copyBuildArtifact(distPath, book.source, book.dest);
+    });
   } catch (error) {
     console.error('Error occurred while processing books');
     console.error(error);
