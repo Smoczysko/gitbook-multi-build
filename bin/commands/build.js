@@ -63,11 +63,11 @@ const buildGitBook = async (directory) => {
   await execAsync(`cd ${getBookFullPath(directory)} && node ${getGitBookCliDirectory()} build`);
 };
 
-const copyBuildArtifact = (distributionPath, source, destination) => {
+const copyBuildArtifact = (outputDirectory, source, destination) => {
   console.log(chalk.yellow(`[${destination}] Copying book...`));
 
   return new Promise(((resolve, reject) => {
-    ncp(`${getBookFullPath(source)}/_book`, `${distributionPath}/${destination}`, (error) => {
+    ncp(`${getBookFullPath(source)}/_book`, `${outputDirectory}/${destination}`, (error) => {
       if (error) {
         reject(error);
       } else {
@@ -86,7 +86,7 @@ module.exports = async (configFile) => {
     await AsyncUtils.forEach(config.books, async (book) => {
       await installBookPlugins(book.source);
       await buildGitBook(book.source);
-      await copyBuildArtifact(configFile.outputDirectory, book.source, book.destination);
+      await copyBuildArtifact(config.outputDirectory, book.source, book.destination);
     });
   } catch (error) {
     console.error(chalk.red('Error while building books:'));
