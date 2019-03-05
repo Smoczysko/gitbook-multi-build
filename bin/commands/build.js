@@ -3,10 +3,42 @@
 const path = require('path');
 const fs = require('fs');
 const rimraf = require('rimraf');
-const { execSync } = require('child_process');
+const chalk = require('chalk');
+const nodeUtil = require('util');
+const { exec } = require('child_process');
+const ncp = require('ncp').ncp;
+const AsyncUtils = require('../utils/async');
+
+const execAsync = nodeUtil.promisify(exec);
+
+const readConfiguration = (configFile) => {
+  let config = null;
+
+  console.log(chalk.yellow('Reading configuration file...'));
+
+  try {
+    config = require(path.join(process.cwd(), configFile));
+  } catch (error) {
+    throw new Error('Error while reading configuration file - file not found or not a proper JSON file!');
+  }
+
+  if (!config.books || !Array.isArray(config.books) || !config.books.every(book => book.hasOwnProperty('source') &&
+      book.hasOwnProperty('destination'))) {
+    throw new Error('Configuration error - books property incorrect!');
+  }
+
+  if (!config.output) {
+    throw new Error('Configuration error - output property not configured!');
+  }
+
+  return {
+    books: config.books,
+    outputDirectory: path.join(process.cwd(), config.output)
+  };
+};
 
 const clearWorkingDirectory = directory => {
-  console.log('Preparing working directory...');
+  console.log(chalk.yellow('Preparing working directory...'));
 
   if (fs.existsSync(directory)) {
     rimraf.sync(directory);
@@ -19,39 +51,46 @@ const getBookFullPath = directory => `${path.join(process.cwd(), directory)}`;
 
 const getGitBookCliDirectory = () => path.join(__dirname, '../../../gitbook-cli/bin/gitbook');
 
-const installBookPlugins = directory => {
-  console.log(`Installing book plugins (${directory})...`);
+const installBookPlugins = async (directory) => {
+  console.log(chalk.yellow(`[${directory}] Installing book plugins...`));
 
-  execSync(`cd ${getBookFullPath(directory)} && node ${getGitBookCliDirectory()} install`);
+  await execAsync(`cd ${getBookFullPath(directory)} && node ${getGitBookCliDirectory()} install`);
 };
 
-const buildBook = directory => {
-  console.log(`Building book (${directory})...`);
+const buildGitBook = async (directory) => {
+  console.log(chalk.yellow(`[${directory}] Building book...`));
 
-  execSync(`cd ${getBookFullPath(directory)} && node ${getGitBookCliDirectory()} build`);
+  await execAsync(`cd ${getBookFullPath(directory)} && node ${getGitBookCliDirectory()} build`);
 };
 
 const copyBuildArtifact = (distributionPath, source, destination) => {
-  console.log(`Copying book (${destination})...`);
+  console.log(chalk.yellow(`[${destination}] Copying book...`));
 
-  execSync(`cp -r ${getBookFullPath(source)}/_book ${distributionPath}/${destination}`);
+  return new Promise(((resolve, reject) => {
+    ncp(`${getBookFullPath(source)}/_book`, `${distributionPath}/${destination}`, (error) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    });
+  }));
 };
 
-module.exports = (configFile) => {
-  const config = require(path.join(process.cwd(), configFile));
-  const distPath = path.join(process.cwd(), config.dist);
-
+module.exports = async (configFile) => {
   try {
-    clearWorkingDirectory(distPath);
+    const config = readConfiguration(configFile);
 
-    config.books.map(book => {
-      installBookPlugins(book.source);
-      buildBook(book.source);
-      copyBuildArtifact(distPath, book.source, book.dest);
+    clearWorkingDirectory(config.outputDirectory);
+
+    await AsyncUtils.forEach(config.books, async (book) => {
+      await installBookPlugins(book.source);
+      await buildGitBook(book.source);
+      await copyBuildArtifact(configFile.outputDirectory, book.source, book.destination);
     });
   } catch (error) {
-    console.error('Error occurred while processing books');
-    console.error(error);
+    console.error(chalk.red('Error while building books:'));
+    console.error(chalk.red(error));
 
     process.exit(1);
   }

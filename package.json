@@ -1,6 +1,6 @@
 {
   "name": "gitbook-multi-build",
-  "version": "1.0.2",
+  "version": "1.0.0",
   "description": "Tool for building multiple GitBook books with single command",
   "engines": {
     "node": "8 || 9 || 10"
@@ -12,6 +12,7 @@
     "chalk": "^2.4.2",
     "commander": "^2.19.0",
     "gitbook-cli": "^2.3.2",
+    "ncp": "^2.0.0",
     "rimraf": "^2.6.3"
   },
   "repository": {
