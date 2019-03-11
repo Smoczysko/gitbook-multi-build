@@ -1,5 +1,7 @@
 # gitbook-multi-build
 
+[![npm version](https://badge.fury.io/js/gitbook-multi-build.svg)](https://badge.fury.io/js/gitbook-multi-build)
+
 Tool for building multiple GitBook books with single command. Under the hood it utilizes [GitBook Toolchain](https://toolchain.gitbook.com) to install all book plugins, build the book (as it would be build on [legacy.gitbook.com](https://legacy.gitbook.com)) and then copy build artifact to specified directory.
 
 ## Installation
